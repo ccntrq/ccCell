@@ -1,11 +1,14 @@
 module Main where
 
 import Data.List
+import Codec.Picture
 
 main :: IO ()
 main = do
   print $ runGenerations (CellAutomaton startState (genRule 30)) 10
   print $ runGenerations (CellAutomaton startState (genRule  1)) 10
+  saveAutomatonSnapshot "./automaton.png" (runGenerations (CellAutomaton startState (genRule 30)) 100)
+  print "saved Image of 100 Rule 30 gens to 'automaton.png'"
 
 startState = [[True]]
 
@@ -78,3 +81,28 @@ getNeighborhoods generation = getNeighborhoods' $ [False,False] ++ generation ++
          in case neighbors of
            (a:b:c:[]) -> (a,b,c):(getNeighborhoods' $ drop 1 generation)
            _ -> []
+
+
+-- Image Processing
+
+-- given an automaton we need to convert its state into:
+--
+-- * width
+-- * heigth
+-- * and a function (Int -> Int -> Pixel) that given a coordinate genrates the pixel
+
+
+saveAutomatonSnapshot path automaton = writePng path $ generateImage (makePixelFun (getState automaton)) width heigth
+   where width = length (head (getState automaton))
+         heigth = length (getState automaton)
+--
+makePixelFun :: [Generation] -> (Int -> Int -> PixelRGB8)
+makePixelFun state =
+  let pixelFun state x y = PixelRGB8  (fromIntegral(if ((state !! y ) !! x) then 255 else 0)) (fromIntegral(if ((state !! y ) !! x) then 255 else 0)) (fromIntegral(if ((state !! y ) !! x) then 255 else 0))
+  in pixelFun (reverse filledState)
+  where filledState = map fillGeneration state
+        fillGeneration gen =
+          let toShort = width - (length gen)
+              eachSide = take (toShort `div` 2) $ repeat False
+          in eachSide ++ gen ++ eachSide
+        width = length $ head state
