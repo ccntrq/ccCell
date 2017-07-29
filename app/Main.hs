@@ -35,7 +35,9 @@ dispatch args =
    _ -> usage
 
 writeAllRules generations = do
-  mapM (writeRule generations) [0..255]
+  mapM (\x -> do putStrLn $ "generating rule: " ++ (show x)
+                 writeRule generations x) 
+       [0..255]
   return ()
 
 writeRule generations rule =
