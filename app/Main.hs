@@ -1,43 +1,42 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Main where
 
-import System.Environment
+import System.Console.CmdArgs
 import System.Exit
 
 import Automaton
 import Automaton.Snapshot
 
-usage   = do
-             putStrLn "Usage: ccCell-exe [-h] generations rule?"
-             putStrLn ""
-             putStrLn "       ccCell - elementary cell automaton"
-             putStrLn ""
-             putStrLn "       given rule:"
-             putStrLn "       writes a png representation of that rule after 'generations'"
-             putStrLn "       generations to './images/generations/rule'"
-             putStrLn ""
-             putStrLn "       without rule:"
-             putStrLn "       creates an image for each rule"
+data Options = Options { generations :: Int
+                       , rule :: Maybe Int
+                       } deriving (Data, Typeable)
+
+options :: Options
+options = Options { generations = 100
+                               &= typ "N"
+                               &= help "Run for 'N' generations [100]"
+                  , rule = Nothing
+                        &= help "Which rule to run. [all]"
+                  }
+       &= summary "ccCell v0.0.3 - a Haskell cell automaton playground"
+       &= program "ccCell-exe"
 
 main :: IO ()
 main = do
-       args <- getArgs
-       dispatch args
-       exit
+       opts <- cmdArgs options
+       dispatch opts
+       exitWith ExitSuccess
 
+dispatch opts =
+  case rule opts of
+    Nothing -> writeAllRules $ generations opts
+    Just x -> writeRule (generations opts) x
 
-dispatch ["-h"] = usage
-dispatch args =
- case length args of
-   1 -> writeAllRules $ read (head args)
-   2 -> let generations = read (head args)
-            rule = read (args !! 1)
-        in writeRule generations rule
-   _ -> usage
 
 writeAllRules generations = do
-  mapM (\x -> do putStrLn $ "generating rule: " ++ (show x)
-                 writeRule generations x) 
-       [0..255]
+  mapM_ (\x -> do putStrLn $ "generating rule: " ++ (show x)
+                  writeRule generations x)
+        [0..255]
   return ()
 
 writeRule generations rule =
@@ -48,8 +47,6 @@ writeRule generations rule =
                    1 -> "00" ++ str
                    2 -> "0" ++ str
                    3 -> str
-
-exit    = exitWith ExitSuccess
 
 -- TODO:
 --
