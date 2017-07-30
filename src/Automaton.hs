@@ -20,8 +20,9 @@ type Rule = Neighborhood -> CellState
 -- Automaton Representation
 
 data Automaton = Automaton { getState :: [Generation]
-                                   , getRule :: Rule
-                                   }
+                           , getRule :: Rule
+                           }
+
 instance Show Automaton where
  show (Automaton state _) = concat $ intersperse "\n" $ map show state
 
