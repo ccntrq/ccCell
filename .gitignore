@@ -1,2 +1,5 @@
 # cabal build artifacts
 dist/
+# cabal sandbox and sandbox conf
+.cabal-sandbox/
+cabal.sandbox.config
