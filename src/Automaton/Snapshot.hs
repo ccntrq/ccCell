@@ -10,23 +10,45 @@ import Automaton
 type CellState = Bool
 type Generation = [CellState]
 
+-- Constants/Configuration
+
+pxWhite = PixelRGB8 (fromIntegral 255) (fromIntegral 255) (fromIntegral 255)
+pxBlack = PixelRGB8 (fromIntegral 0) (fromIntegral 0) (fromIntegral 0)
+
+pxRed   = PixelRGB8 (fromIntegral 255) (fromIntegral 0) (fromIntegral 0)
+pxGreen = PixelRGB8 (fromIntegral 0) (fromIntegral 255) (fromIntegral 0)
+pxBlue  = PixelRGB8 (fromIntegral 0) (fromIntegral 0) (fromIntegral 255)
+
+defaultCellState = False
+
+cellStateToPixel cell
+  | cell = pxWhite
+  | not cell = pxBlack
+
+-- Snapshotting
+
 writeSnapshot :: String -> Automaton -> IO()
 writeSnapshot path = (writePng path) . takeSnapshot
 
 
 takeSnapshot :: Automaton -> Image PixelRGB8
-takeSnapshot automaton = generateImage (mkPixelFun (getState automaton)) width heigth
-   where width = length (head (getState automaton))
-         heigth = length (getState automaton)
+takeSnapshot automaton = generateImage (mkPixelFun state) width heigth
+   where width = length (head state)
+         heigth = length state
+         state = getState automaton
 
 
 mkPixelFun :: [Generation] -> (Int -> Int -> PixelRGB8)
-mkPixelFun state =
-  let pixelFun state x y = PixelRGB8  (fromIntegral(if ((state !! y ) !! x) then 255 else 0)) (fromIntegral(if ((state !! y ) !! x) then 255 else 0)) (fromIntegral(if ((state !! y ) !! x) then 255 else 0))
-  in pixelFun (reverse filledState)
-  where filledState = map fillGeneration state
-        fillGeneration gen =
-          let toShort = width - (length gen)
-              eachSide = take (toShort `div` 2) $ repeat False
-          in eachSide ++ gen ++ eachSide
-        width = length $ head state
+mkPixelFun state x y = cellStateToPixel $ getCellState state x y
+
+getCellState state x y
+  | y >= heigth = defaultCellState
+  | otherwise =
+    let cur = state !! realY
+        realX = x - ((width - (length cur)) `div` 2)
+    in if realX >= 0 && realX < length cur
+      then cur !! realX
+      else defaultCellState
+  where width = length $ head state
+        heigth = length state
+        realY = heigth - y - 1 -- to not have an upside down pyramide
